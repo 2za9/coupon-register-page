@@ -1,738 +1,329 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>토큰 수령</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard Variable", Pretendard, Roboto, "Noto Sans KR", "Segoe UI", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
-        }
+import React, { useState, useEffect } from 'react';
+import { AlertCircle, Wallet, Check, ChevronDown, Copy, ExternalLink, RefreshCw } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
 
-        body {
-            background: #f5f7f9;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            line-height: 1.5;
-            padding: 20px;
-        }
+const TokenClaim = () => {
+  const [deviceInfo, setDeviceInfo] = useState({
+    isIOS: false,
+    isAndroid: false
+  });
+  const [walletStatus, setWalletStatus] = useState('initial');
+  const [error, setError] = useState('');
+  const [account, setAccount] = useState('');
+  const [couponCode, setCouponCode] = useState('');
+  const [showManualInput, setShowManualInput] = useState(false);
+  const [showAddressGuide, setShowAddressGuide] = useState(false);
+  const [manualAddress, setManualAddress] = useState('');
+  const [appCheckStatus, setAppCheckStatus] = useState({
+    checking: true,
+    installed: false
+  });
+  const [copied, setCopied] = useState(false);
 
-        .container {
-            background: white;
-            border-radius: 24px;
-            padding: 32px;
-            width: 100%;
-            max-width: 480px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
+  const config = {
+    APP_STORE_URL: 'https://apps.apple.com/us/app/metamask/id1438144202',
+    PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=io.metamask',
+    METAMASK_DEEPLINK_IOS: 'metamask://',
+    METAMASK_DEEPLINK_ANDROID: 'https://metamask.app.link/',
+    CHECK_TIMEOUT: 2000
+  };
 
-        .title {
-            font-size: 24px;
-            font-weight: 700;
-            text-align: center;
-            color: #111827;
-            margin-bottom: 32px;
-        }
+  useEffect(() => {
+    detectDevice();
+  }, []);
 
-        .wallet-status {
-            background: #f3f4f6;
-            border-radius: 12px;
-            padding: 16px;
-            text-align: center;
-            margin-bottom: 24px;
-            font-size: 14px;
-            color: #4b5563;
-            word-break: break-all;
-            display: none;
-        }
+  const detectDevice = async () => {
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isIOS = /iphone|ipad|ipod/.test(userAgent);
+    const isAndroid = /android/.test(userAgent);
+    
+    setDeviceInfo({ isIOS, isAndroid });
+    await checkMetaMaskInstallation(isIOS, isAndroid);
+  };
 
-        .store-buttons {
-            display: none;
-            gap: 12px;
-            margin-bottom: 24px;
-        }
+  const checkMetaMaskInstallation = async (isIOS, isAndroid) => {
+    setAppCheckStatus({ checking: true, installed: false });
 
-        .store-button {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 600;
-            color: white;
-            text-decoration: none;
-            transition: transform 0.2s ease;
-        }
+    try {
+      if (isIOS) {
+        await checkIOSInstallation();
+      } else if (isAndroid) {
+        await checkAndroidInstallation();
+      }
+    } catch (err) {
+      console.error('App check error:', err);
+      setAppCheckStatus({ checking: false, installed: false });
+    }
+  };
 
-        .store-button:hover {
-            transform: translateY(-2px);
-        }
+  const checkIOSInstallation = () => {
+    return new Promise((resolve) => {
+      const timeout = setTimeout(() => {
+        setAppCheckStatus({ checking: false, installed: false });
+        resolve(false);
+      }, config.CHECK_TIMEOUT);
 
-        .google-play {
-            background: #34a853;
-        }
+      window.location.href = config.METAMASK_DEEPLINK_IOS;
 
-        .app-store {
-            background: #0066cc;
-        }
+      window.addEventListener('blur', () => {
+        clearTimeout(timeout);
+        setAppCheckStatus({ checking: false, installed: true });
+        resolve(true);
+      });
+    });
+  };
 
-        .connect-wallet {
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 12px;
-            background: #3b82f6;
-            color: white;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s ease;
-            margin-bottom: 24px;
-        }
+  const checkAndroidInstallation = () => {
+    return new Promise((resolve) => {
+      const timeout = setTimeout(() => {
+        setAppCheckStatus({ checking: false, installed: false });
+        resolve(false);
+      }, config.CHECK_TIMEOUT);
 
-        .connect-wallet:hover {
-            background: #2563eb;
-        }
+      window.location.href = config.METAMASK_DEEPLINK_ANDROID;
 
-        .connect-wallet:disabled {
-            background: #94a3b8;
-            cursor: not-allowed;
-        }
+      window.addEventListener('blur', () => {
+        clearTimeout(timeout);
+        setAppCheckStatus({ checking: false, installed: true });
+        resolve(true);
+      });
+    });
+  };
 
-        .form-group {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 8px;
-        }
+  const openAppStore = () => {
+    const storeUrl = deviceInfo.isIOS ? config.APP_STORE_URL : config.PLAY_STORE_URL;
+    window.location.href = storeUrl;
+  };
 
-        .input-wrapper {
-            flex: 1;
-        }
+  const openMetaMaskApp = () => {
+    const deepLink = deviceInfo.isIOS ? 
+      config.METAMASK_DEEPLINK_IOS : 
+      `${config.METAMASK_DEEPLINK_ANDROID}dapp/${window.location.href}`;
+    
+    window.location.href = deepLink;
+  };
 
-        .input-label {
-            display: block;
-            margin-bottom: 8px;
-            color: #374151;
-            font-size: 14px;
-            font-weight: 500;
-        }
+  const handleManualSubmit = () => {
+    if (!manualAddress.match(/^0x[a-fA-F0-9]{40}$/)) {
+      setError('올바른 지갑 주소를 입력해주세요.');
+      return;
+    }
+    setAccount(manualAddress);
+    setWalletStatus('connected');
+    setError('');
+    setShowManualInput(false);
+  };
 
-        .input-field {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
-            font-size: 15px;
-            transition: all 0.2s ease;
-        }
+  const AddressGuide = () => (
+    <Card className="mt-4 animate-fadeIn">
+      <CardContent className="p-4 space-y-4">
+        <h3 className="font-medium flex items-center gap-2">
+          <ExternalLink className="h-4 w-4" />
+          MetaMask에서 지갑 주소 확인하기
+        </h3>
+        <ol className="space-y-3 text-sm text-gray-600">
+          <li className="flex gap-3">
+            <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full font-medium">1</span>
+            <span>MetaMask 앱을 실행합니다</span>
+          </li>
+          <li className="flex gap-3">
+            <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full font-medium">2</span>
+            <span>메인 화면의 계정 주소를 길게 누르거나, 계정 주소를 탭하여 복사합니다</span>
+          </li>
+          <li className="flex gap-3">
+            <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full font-medium">3</span>
+            <span>또는 오른쪽 상단 계정 메뉴 (⋮) → 계정 세부정보에서도 확인할 수 있습니다</span>
+          </li>
+        </ol>
+        <p className="text-xs text-gray-500 border-t pt-3 mt-3">
+          * 계정 주소는 0x로 시작하는 42자리 문자입니다
+        </p>
+      </CardContent>
+    </Card>
+  );
 
-        .input-field:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        .submit-button {
-            padding: 12px 24px;
-            background: #3b82f6;
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            white-space: nowrap;
-        }
-
-        .submit-button:hover {
-            background: #2563eb;
-            transform: translateY(-2px);
-        }
-
-        .submit-button:disabled {
-            background: #94a3b8;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .error-text {
-            color: #ef4444;
-            font-size: 13px;
-            margin-top: 6px;
-            min-height: 18px;
-        }
-
-        .notification {
-            margin-top: 16px;
-            padding: 12px;
-            border-radius: 12px;
-            font-size: 14px;
-            text-align: center;
-            animation: slideIn 0.3s ease;
-        }
-
-        .notification.success {
-            background: #ecfdf5;
-            color: #065f46;
-            border: 1px solid #a7f3d0;
-        }
-
-        .notification.error {
-            background: #fef2f2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateY(-10px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .loader {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #ffffff;
-            border-radius: 50%;
-            border-top-color: transparent;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .metamask-guide {
-            text-align: center;
-            margin-bottom: 16px;
-            color: #4b5563;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        .mobile-metamask-guide {
-            text-align: center;
-            margin-bottom: 16px;
-            color: #4b5563;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        .manual-connect {
-            display: none;
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px solid #e5e7eb;
-        }
-
-        .manual-connect-button {
-            width: 100%;
-            padding: 10px;
-            font-size: 14px;
-            color: #6b7280;
-            background: none;
-            border: none;
-            cursor: pointer;
-            text-decoration: underline;
-        }
-
-        .manual-connect-button:hover {
-            color: #374151;
-        }
-
-        .wallet-input-group {
-            display: none;
-            margin-top: 12px;
-        }
-
-        .address-guide {
-            margin-bottom: 16px;
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 16px;
-        }
-
-        .guide-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 12px;
-        }
-
-        .guide-steps {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .guide-step {
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-            font-size: 13px;
-            color: #4b5563;
-            margin-bottom: 8px;
-            line-height: 1.5;
-        }
-
-        .step-number {
-            flex-shrink: 0;
-            width: 20px;
-            height: 20px;
-            background: #e5e7eb;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: 600;
-            color: #374151;
-        }
-
-        .copy-tip {
-            font-size: 12px;
-            color: #6b7280;
-            margin-top: 8px;
-            font-style: italic;
-        }
-
-        @media (max-width: 480px) {
-            .container {
-                padding: 24px;
-                border-radius: 20px;
-            }
-
-            .form-group {
-                flex-direction: column;
-            }
-
-            .submit-button {
-                width: 100%;
-            }
-
-            .store-buttons {
-                flex-direction: column;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1 class="title">토큰 수령</h1>
-
-        <div id="metamaskGuide" class="metamask-guide" style="display: none;">
-            MetaMask 지갑이 필요합니다.<br>
-            아래 버튼을 눌러 설치해주세요.
+  const renderWalletConnection = () => {
+    if (appCheckStatus.checking) {
+      return (
+        <div className="flex flex-col items-center justify-center p-6 space-y-4">
+          <div className="animate-spin">
+            <RefreshCw className="h-8 w-8 text-blue-500" />
+          </div>
+          <p>MetaMask 설치 확인 중...</p>
         </div>
+      );
+    }
 
-        <div id="mobileMetamaskGuide" class="mobile-metamask-guide" style="display: none;">
-            MetaMask 앱에서 브라우저를 통해 접속하거나<br>
-            아래 버튼을 눌러 MetaMask 앱으로 이동해주세요.
+    if (!appCheckStatus.installed) {
+      return (
+        <div className="space-y-6">
+          <p className="text-center text-gray-600">
+            MetaMask 지갑이 필요합니다
+          </p>
+          <Button
+            onClick={openAppStore}
+            className="w-full h-12 text-lg"
+            variant="outline"
+          >
+            <img src="/metamask-logo.svg" alt="MetaMask" className="w-6 h-6 mr-2" />
+            {deviceInfo.isIOS ? 'App Store에서 설치하기' : 'Play Store에서 설치하기'}
+          </Button>
         </div>
+      );
+    }
 
-        <div id="storeButtons" class="store-buttons">
-            <a href="https://play.google.com/store/apps/details?id=io.metamask" 
-               target="_blank" 
-               class="store-button google-play"
-               id="googlePlayButton">
-                Google Play에서 설치하기
-            </a>
-            <a href="https://apps.apple.com/us/app/metamask/id1438144202" 
-               target="_blank" 
-               class="store-button app-store"
-               id="appStoreButton">
-                App Store에서 설치하기
-            </a>
-        </div>
+    return (
+      <div className="space-y-6">
+        <Button
+          onClick={openMetaMaskApp}
+          className="w-full h-12 text-lg"
+        >
+          <img src="/metamask-logo.svg" alt="MetaMask" className="w-6 h-6 mr-2" />
+          MetaMask 앱으로 이동
+        </Button>
 
-        <button id="connectWallet" class="connect-wallet">MetaMask 연결하기</button>
-        <button id="openMetaMask" class="connect-wallet" style="display: none;">MetaMask 앱으로 이동</button>
-        <div id="walletStatus" class="wallet-status"></div>
-
-        <!-- 수동 입력 폼 -->
-        <div id="manualConnect" class="manual-connect">
-            <button type="button" id="showManualInput" class="manual-connect-button">
-                지갑 주소 직접 입력하기
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-200" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <button 
+              onClick={() => setShowManualInput(!showManualInput)}
+              className="px-2 bg-white text-blue-600 hover:text-blue-700 flex items-center gap-1"
+            >
+              지갑 연결이 안되시나요?
+              <ChevronDown className={`h-4 w-4 transition-transform ${showManualInput ? 'rotate-180' : ''}`} />
             </button>
-            
-            <div id="walletInputGroup" class="wallet-input-group">
-                <div class="address-guide">
-                    <div class="guide-title">MetaMask 앱에서 지갑 주소 찾기</div>
-                    <ul class="guide-steps">
-                        <li class="guide-step">
-                            <span class="step-number">1</span>
-                            <span>MetaMask 앱을 실행합니다</span>
-                        </li>
-                        <li class="guide-step">
-                            <span class="step-number">2</span>
-                            <span>메인 화면의 계정 주소를 길게 누르거나, 계정 주소를 탭하여 복사합니다</span>
-                        </li>
-                        <li class="guide-step">
-                            <span class="step-number">3</span>
-                            <span>앱의 오른쪽 상단 계정 메뉴 (세 개의 점) → 계정 세부정보에서도 확인할 수 있습니다</span>
-                        </li>
-                    </ul>
-                    <div class="copy-tip">* 계정 주소는 0x로 시작하는 42자리 문자입니다</div>
-                </div>
-
-                <div class="input-wrapper">
-                    <label for="walletAddress" class="input-label">지갑 주소</label>
-                    <input 
-                        type="text" 
-                        id="walletAddress" 
-                        class="input-field"
-                        placeholder="0x로 시작하는 지갑 주소를 입력해주세요"
-                        autocomplete="off"
-                    >
-                    <div id="walletAddressError" class="error-message"></div>
-                </div>
-                <button type="button" id="submitWalletAddress" class="submit-button">
-                    지갑 주소 등록
-                </button>
-            </div>
+          </div>
         </div>
 
-        <form id="couponForm">
-            <div class="form-group">
-                <div class="input-wrapper">
-                    <label for="couponCode" class="input-label">쿠폰 코드</label>
-                    <input 
-                        type="text" 
-                        id="couponCode" 
-                        class="input-field"
-                        placeholder="쿠폰 코드를 입력해주세요"
-                        autocomplete="off"
-                        required
-                    >
-                    <div class="error-text" id="couponError"></div>
-                </div>
-                <button type="submit" id="submitButton" class="submit-button">등록하기</button>
+        {showManualInput && (
+          <div className="space-y-4 animate-fadeIn">
+            <div className="relative">
+              <Input
+                placeholder="지갑 주소를 입력하세요 (0x...)"
+                value={manualAddress}
+                onChange={(e) => setManualAddress(e.target.value)}
+                className="h-12"
+              />
+              <button
+                onClick={() => setShowAddressGuide(!showAddressGuide)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                title="지갑 주소 확인 방법"
+              >
+                <ExternalLink className="h-5 w-5" />
+              </button>
             </div>
-        </form>
 
-        <div id="notification" class="notification" style="display: none;"></div>
+            {showAddressGuide && <AddressGuide />}
+
+            <Button 
+              onClick={handleManualSubmit}
+              className="w-full h-12"
+            >
+              주소로 연결하기
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const copyAddress = () => {
+    navigator.clipboard.writeText(account);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const submitCoupon = () => {
+    if (!couponCode) {
+      setError('쿠폰 코드를 입력해주세요.');
+      return;
+    }
+    // Handle coupon submission
+    console.log('Submit coupon:', couponCode, 'for account:', account);
+  };
+
+  if (walletStatus === 'connected') {
+    return (
+      <div className="max-w-md mx-auto p-6 space-y-8">
+        <div className="text-center space-y-4">
+          <div className="inline-block p-4 bg-green-50 rounded-full">
+            <Check className="h-8 w-8 text-green-500" />
+          </div>
+          <h1 className="text-2xl font-bold">토큰 수령</h1>
+        </div>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="space-y-2">
+              <label className="text-sm text-gray-500">연결된 지갑</label>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="font-mono">{`${account.slice(0, 6)}...${account.slice(-4)}`}</span>
+                <button
+                  onClick={copyAddress}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  title="주소 복사"
+                >
+                  {copied ? (
+                    <Check className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Copy className="h-4 w-4 text-gray-500" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-4">
+          <Input
+            placeholder="쿠폰 코드를 입력하세요"
+            value={couponCode}
+            onChange={(e) => setCouponCode(e.target.value)}
+            className="h-12"
+          />
+          
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          <Button 
+            onClick={submitCoupon}
+            className="w-full h-12 text-lg"
+          >
+            토큰 수령하기
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-md mx-auto p-6">
+      <div className="text-center space-y-4 mb-8">
+        <div className="inline-block p-4 bg-blue-50 rounded-full">
+          <Wallet className="h-8 w-8 text-blue-500" />
+        </div>
+        <h1 className="text-2xl font-bold">토큰 수령</h1>
+      </div>
+
+      {error && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {renderWalletConnection()}
     </div>
+  );
+};
 
-    <script>
-        const connectWalletBtn = document.getElementById('connectWallet');
-        const openMetaMaskBtn = document.getElementById('openMetaMask');
-        const walletStatus = document.getElementById('walletStatus');
-        const metamaskGuide = document.getElementById('metamaskGuide');
-        const mobileMetamaskGuide = document.getElementById('mobileMetamaskGuide');
-        const storeButtons = document.getElementById('storeButtons');
-        const form = document.getElementById('couponForm');
-        const submitButton = document.getElementById('submitButton');
-        const notification = document.getElementById('notification');
-        const manualConnect = document.getElementById('manualConnect');
-        const showManualInput = document.getElementById('showManualInput');
-        const walletInputGroup = document.getElementById('walletInputGroup');
-        const walletAddressInput = document.getElementById('walletAddress');
-        const submitWalletAddress = document.getElementById('submitWalletAddress');
-        const walletAddressError = document.getElementById('walletAddressError');
-        
-        let userWalletAddress = null;
-
-        function isMobileDevice() {
-            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        }
-
-        function getMobileOperatingSystem() {
-            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            
-            if (/android/i.test(userAgent)) {
-                return 'Android';
-            }
-
-            if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
-                return 'iOS';
-            }
-
-            return 'unknown';
-        }
-
-        function isMetaMaskInstalled() {
-            if (!isMobileDevice()) {
-                return typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask;
-            }
-            
-            return window.ethereum?.isMetaMask || false;
-        }
-
-        function isMetaMaskBrowser() {
-            try {
-                return window.ethereum?.isMetaMask && 
-                       isMobileDevice() && 
-                       window.ethereum.isConnected();
-            } catch (error) {
-                return false;
-            }
-        }
-
-        function getMetaMaskDeepLink() {
-            const currentUrl = encodeURIComponent(window.location.href);
-            if (getMobileOperatingSystem() === 'iOS') {
-                return `metamask://dapp/${currentUrl}`;
-            } else {
-                return `https://metamask.app.link/dapp/${currentUrl}`;
-            }
-        }
-
-        function updateInterface() {
-            const isMobile = isMobileDevice();
-            const isInMetaMaskBrowser = isMetaMaskBrowser();
-            const hasMetaMask = isMetaMaskInstalled();
-            const os = getMobileOperatingSystem();
-
-            if (isMobile) {
-                if (isInMetaMaskBrowser) {
-                    // MetaMask 브라우저로 접속
-                    connectWalletBtn.style.display = 'block';
-                    metamaskGuide.style.display = 'none';
-                    storeButtons.style.display = 'none';
-                    mobileMetamaskGuide.style.display = 'none';
-                    openMetaMaskBtn.style.display = 'none';
-                } else if (hasMetaMask) {
-                    // MetaMask가 설치되어 있지만 일반 브라우저로 접속
-                    connectWalletBtn.style.display = 'none';
-                    metamaskGuide.style.display = 'none';
-                    storeButtons.style.display = 'none';
-                    mobileMetamaskGuide.style.display = 'block';
-                    openMetaMaskBtn.style.display = 'block';
-                } else {
-                    // MetaMask 미설치
-                    connectWalletBtn.style.display = 'none';
-                    metamaskGuide.style.display = 'block';
-                    storeButtons.style.display = 'flex';
-                    mobileMetamaskGuide.style.display = 'none';
-                    openMetaMaskBtn.style.display = 'none';
-
-                    if (os === 'Android') {
-                        document.getElementById('appStoreButton').style.display = 'none';
-                    } else if (os === 'iOS') {
-                        document.getElementById('googlePlayButton').style.display = 'none';
-                    }
-                }
-            } else {
-                // 데스크톱
-                if (hasMetaMask) {
-                    metamaskGuide.style.display = 'none';
-                    storeButtons.style.display = 'none';
-                    connectWalletBtn.style.display = 'block';
-                } else {
-                    connectWalletBtn.style.display = 'none';
-                    metamaskGuide.style.display = 'block';
-                    storeButtons.style.display = 'flex';
-                }
-                mobileMetamaskGuide.style.display = 'none';
-                openMetaMaskBtn.style.display = 'none';
-            }
-        }
-
-        function showNotification(message, type) {
-            notification.textContent = message;
-            notification.className = `notification ${type}`;
-            notification.style.display = 'block';
-            
-            setTimeout(() => {
-                notification.style.display = 'none';
-            }, 5000);
-        }
-
-        function updateWalletStatus() {
-            if (userWalletAddress) {
-                const shortAddress = `${userWalletAddress.substring(0, 6)}...${userWalletAddress.substring(38)}`;
-                walletStatus.textContent = `연결된 지갑: ${shortAddress}`;
-                walletStatus.style.display = 'block';
-                connectWalletBtn.style.display = 'none';
-                openMetaMaskBtn.style.display = 'none';
-                mobileMetamaskGuide.style.display = 'none';
-                manualConnect.style.display = 'none';
-            } else {
-                walletStatus.style.display = 'none';
-                updateInterface();
-            }
-        }
-
-        function handleConnectionFailure() {
-            showNotification('자동 연결에 실패했습니다. 지갑 주소를 직접 입력해주세요.', 'error');
-            manualConnect.style.display = 'block';
-        }
-
-        function isValidEthereumAddress(address) {
-            return /^0x[a-fA-F0-9]{40}$/.test(address);
-        }
-
-        async function handleManualWalletConnection() {
-            const address = walletAddressInput.value.trim();
-            
-            if (!address) {
-                walletAddressError.textContent = '지갑 주소를 입력해주세요.';
-                return;
-            }
-
-            if (!isValidEthereumAddress(address)) {
-                walletAddressError.textContent = '올바른 이더리움 지갑 주소를 입력해주세요.';
-                return;
-            }
-
-            walletAddressError.textContent = '';
-            submitWalletAddress.disabled = true;
-            submitWalletAddress.innerHTML = '<span class="loader"></span>';
-
-            try {
-                userWalletAddress = address;
-                updateWalletStatus();
-                showNotification('지갑이 연결되었습니다.', 'success');
-                walletInputGroup.style.display = 'none';
-            } catch (error) {
-                walletAddressError.textContent = '지갑 연결에 실패했습니다.';
-            } finally {
-                submitWalletAddress.disabled = false;
-                submitWalletAddress.textContent = '지갑 주소 등록';
-            }
-        }
-
-        async function connectWallet() {
-            if (typeof window.ethereum !== 'undefined') {
-                try {
-                    connectWalletBtn.disabled = true;
-                    connectWalletBtn.innerHTML = '<span class="loader"></span>';
-                    
-                    const accounts = await window.ethereum.request({
-                        method: 'eth_requestAccounts'
-                    });
-                    
-                    userWalletAddress = accounts[0];
-                    updateWalletStatus();
-                    showNotification('지갑이 연결되었습니다.', 'success');
-                } catch (error) {
-                    handleConnectionFailure();
-                } finally {
-                    connectWalletBtn.disabled = false;
-                    connectWalletBtn.textContent = 'MetaMask 연결하기';
-                }
-            } else {
-                handleConnectionFailure();
-            }
-        }
-
-        async function openMetaMaskApp() {
-            const deepLink = getMetaMaskDeepLink();
-            window.location.href = deepLink;
-        }
-
-        async function checkIfWalletIsConnected() {
-            if (typeof window.ethereum !== 'undefined') {
-                try {
-                    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-                    if (accounts.length > 0) {
-                        userWalletAddress = accounts[0];
-                        updateWalletStatus();
-                        showNotification('지갑이 자동으로 연결되었습니다.', 'success');
-                    }
-                } catch (error) {
-                    console.error('자동 연결 중 오류 발생:', error);
-                }
-            }
-        }
-
-        // 이벤트 리스너
-        connectWalletBtn.addEventListener('click', connectWallet);
-        openMetaMaskBtn.addEventListener('click', openMetaMaskApp);
-        showManualInput.addEventListener('click', () => {
-            walletInputGroup.style.display = walletInputGroup.style.display === 'none' ? 'block' : 'none';
-        });
-        submitWalletAddress.addEventListener('click', handleManualWalletConnection);
-        walletAddressInput.addEventListener('input', () => {
-            walletAddressError.textContent = '';
-        });
-
-        if (window.ethereum) {
-            window.ethereum.on('accountsChanged', function (accounts) {
-                if (accounts.length === 0) {
-                    userWalletAddress = null;
-                } else {
-                    userWalletAddress = accounts[0];
-                }
-                updateWalletStatus();
-            });
-        }
-
-        form.addEventListener('submit', async function(event) {
-            event.preventDefault();
-            
-            if (!userWalletAddress) {
-                showNotification('먼저 지갑을 연결해주세요.', 'error');
-                return;
-            }
-
-            const couponCode = document.getElementById('couponCode').value.trim();
-            
-            if (!couponCode) {
-                showNotification('쿠폰 코드를 입력해주세요.', 'error');
-                return;
-            }
-
-            submitButton.disabled = true;
-            submitButton.innerHTML = '<span class="loader"></span>';
-
-            try {
-                // 여기에 실제 API 호출 코드 추가
-                await new Promise(resolve => setTimeout(resolve, 1000)); // 임시 딜레이
-                showNotification('쿠폰이 성공적으로 등록되었습니다!', 'success');
-                form.reset();
-            } catch (error) {
-                showNotification(error.message || '쿠폰 등록에 실패했습니다.', 'error');
-            } finally {
-                submitButton.disabled = false;
-                submitButton.textContent = '등록하기';
-            }
-        });
-
-        // 초기화
-        document.addEventListener('DOMContentLoaded', async () => {
-            updateInterface();
-            
-            if (isMetaMaskBrowser()) {
-                await checkIfWalletIsConnected();
-                
-                if (!userWalletAddress) {
-                    try {
-                        const accounts = await window.ethereum.request({
-                            method: 'eth_requestAccounts'
-                        });
-                        
-                        if (accounts.length > 0) {
-                            userWalletAddress = accounts[0];
-                            updateWalletStatus();
-                            showNotification('MetaMask가 자동으로 연결되었습니다.', 'success');
-                        } else {
-                            handleConnectionFailure();
-                        }
-                    } catch (error) {
-                        handleConnectionFailure();
-                    }
-                }
-            }
-        });
-    </script>
-</body>
-</html>
+export default TokenClaim;
