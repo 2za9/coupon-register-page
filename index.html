@@ -143,7 +143,6 @@
 
         .submit-button {
             padding: 12px 24px;
-            margin-top: 24px;
             background: #3b82f6;
             color: white;
             border: none;
@@ -221,6 +220,100 @@
             }
         }
 
+        .metamask-guide {
+            text-align: center;
+            margin-bottom: 16px;
+            color: #4b5563;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .mobile-metamask-guide {
+            text-align: center;
+            margin-bottom: 16px;
+            color: #4b5563;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .manual-connect {
+            display: none;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .manual-connect-button {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            color: #6b7280;
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .manual-connect-button:hover {
+            color: #374151;
+        }
+
+        .wallet-input-group {
+            display: none;
+            margin-top: 12px;
+        }
+
+        .address-guide {
+            margin-bottom: 16px;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .guide-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 12px;
+        }
+
+        .guide-steps {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .guide-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 13px;
+            color: #4b5563;
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .step-number {
+            flex-shrink: 0;
+            width: 20px;
+            height: 20px;
+            background: #e5e7eb;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .copy-tip {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 8px;
+            font-style: italic;
+        }
+
         @media (max-width: 480px) {
             .container {
                 padding: 24px;
@@ -233,49 +326,11 @@
 
             .submit-button {
                 width: 100%;
-                margin-top: 12px;
             }
 
             .store-buttons {
                 flex-direction: column;
             }
-        }
-
-        .metamask-guide {
-            text-align: center;
-            margin-bottom: 16px;
-            color: #4b5563;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        /* 새로 추가된 모바일 관련 스타일 */
-        .mobile-metamask-guide {
-            text-align: center;
-            margin-bottom: 16px;
-            color: #4b5563;
-            font-size: 14px;
-            line-height: 1.6;
-            display: none;
-        }
-
-        .open-metamask-button {
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 12px;
-            background: #3b82f6;
-            color: white;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s ease;
-            margin-bottom: 24px;
-            display: none;
-        }
-
-        .open-metamask-button:hover {
-            background: #2563eb;
         }
     </style>
 </head>
@@ -288,7 +343,7 @@
             아래 버튼을 눌러 설치해주세요.
         </div>
 
-        <div id="mobileMetamaskGuide" class="mobile-metamask-guide">
+        <div id="mobileMetamaskGuide" class="mobile-metamask-guide" style="display: none;">
             MetaMask 앱에서 브라우저를 통해 접속하거나<br>
             아래 버튼을 눌러 MetaMask 앱으로 이동해주세요.
         </div>
@@ -308,9 +363,52 @@
             </a>
         </div>
 
-        <button id="openMetaMask" class="open-metamask-button">MetaMask 앱으로 이동</button>
         <button id="connectWallet" class="connect-wallet">MetaMask 연결하기</button>
+        <button id="openMetaMask" class="connect-wallet" style="display: none;">MetaMask 앱으로 이동</button>
         <div id="walletStatus" class="wallet-status"></div>
+
+        <!-- 수동 입력 폼 -->
+        <div id="manualConnect" class="manual-connect">
+            <button type="button" id="showManualInput" class="manual-connect-button">
+                지갑 주소 직접 입력하기
+            </button>
+            
+            <div id="walletInputGroup" class="wallet-input-group">
+                <div class="address-guide">
+                    <div class="guide-title">MetaMask 앱에서 지갑 주소 찾기</div>
+                    <ul class="guide-steps">
+                        <li class="guide-step">
+                            <span class="step-number">1</span>
+                            <span>MetaMask 앱을 실행합니다</span>
+                        </li>
+                        <li class="guide-step">
+                            <span class="step-number">2</span>
+                            <span>메인 화면의 계정 주소를 길게 누르거나, 계정 주소를 탭하여 복사합니다</span>
+                        </li>
+                        <li class="guide-step">
+                            <span class="step-number">3</span>
+                            <span>앱의 오른쪽 상단 계정 메뉴 (세 개의 점) → 계정 세부정보에서도 확인할 수 있습니다</span>
+                        </li>
+                    </ul>
+                    <div class="copy-tip">* 계정 주소는 0x로 시작하는 42자리 문자입니다</div>
+                </div>
+
+                <div class="input-wrapper">
+                    <label for="walletAddress" class="input-label">지갑 주소</label>
+                    <input 
+                        type="text" 
+                        id="walletAddress" 
+                        class="input-field"
+                        placeholder="0x로 시작하는 지갑 주소를 입력해주세요"
+                        autocomplete="off"
+                    >
+                    <div id="walletAddressError" class="error-message"></div>
+                </div>
+                <button type="button" id="submitWalletAddress" class="submit-button">
+                    지갑 주소 등록
+                </button>
+            </div>
+        </div>
 
         <form id="couponForm">
             <div class="form-group">
@@ -343,6 +441,12 @@
         const form = document.getElementById('couponForm');
         const submitButton = document.getElementById('submitButton');
         const notification = document.getElementById('notification');
+        const manualConnect = document.getElementById('manualConnect');
+        const showManualInput = document.getElementById('showManualInput');
+        const walletInputGroup = document.getElementById('walletInputGroup');
+        const walletAddressInput = document.getElementById('walletAddress');
+        const submitWalletAddress = document.getElementById('submitWalletAddress');
+        const walletAddressError = document.getElementById('walletAddressError');
         
         let userWalletAddress = null;
 
@@ -364,8 +468,22 @@
             return 'unknown';
         }
 
+        function isMetaMaskInstalled() {
+            if (!isMobileDevice()) {
+                return typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask;
+            }
+            
+            return window.ethereum?.isMetaMask || false;
+        }
+
         function isMetaMaskBrowser() {
-            return window.ethereum?.isMetaMask && isMobileDevice();
+            try {
+                return window.ethereum?.isMetaMask && 
+                       isMobileDevice() && 
+                       window.ethereum.isConnected();
+            } catch (error) {
+                return false;
+            }
         }
 
         function getMetaMaskDeepLink() {
@@ -379,13 +497,27 @@
 
         function updateInterface() {
             const isMobile = isMobileDevice();
-            const isMetaMaskInstalled = typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask;
             const isInMetaMaskBrowser = isMetaMaskBrowser();
+            const hasMetaMask = isMetaMaskInstalled();
             const os = getMobileOperatingSystem();
 
             if (isMobile) {
-                if (!isMetaMaskInstalled) {
-                    // MetaMask가 설치되지 않은 경우
+                if (isInMetaMaskBrowser) {
+                    // MetaMask 브라우저로 접속
+                    connectWalletBtn.style.display = 'block';
+                    metamaskGuide.style.display = 'none';
+                    storeButtons.style.display = 'none';
+                    mobileMetamaskGuide.style.display = 'none';
+                    openMetaMaskBtn.style.display = 'none';
+                } else if (hasMetaMask) {
+                    // MetaMask가 설치되어 있지만 일반 브라우저로 접속
+                    connectWalletBtn.style.display = 'none';
+                    metamaskGuide.style.display = 'none';
+                    storeButtons.style.display = 'none';
+                    mobileMetamaskGuide.style.display = 'block';
+                    openMetaMaskBtn.style.display = 'block';
+                } else {
+                    // MetaMask 미설치
                     connectWalletBtn.style.display = 'none';
                     metamaskGuide.style.display = 'block';
                     storeButtons.style.display = 'flex';
@@ -397,54 +529,84 @@
                     } else if (os === 'iOS') {
                         document.getElementById('googlePlayButton').style.display = 'none';
                     }
-                } else if (!isInMetaMaskBrowser) {
-                    // MetaMask가 설치되어 있지만 MetaMask 브라우저가 아닌 경우
-                    connectWalletBtn.style.display = 'none';
-                    metamaskGuide.style.display = 'none';
-                    storeButtons.style.display = 'none';
-                    mobileMetamaskGuide.style.display = 'block';
-                    openMetaMaskBtn.style.display = 'block';
-                } else {
-                    // MetaMask 브라우저인 경우
-                    connectWalletBtn.style.display = 'block';
-                    metamaskGuide.style.display = 'none';
-                    storeButtons.style.display = 'none';
-                    mobileMetamaskGuide.style.display = 'none';
-                    openMetaMaskBtn.style.display = 'none';
                 }
             } else {
-                // 데스크톱의 경우 기존 로직 유지
-                if (!isMetaMaskInstalled) {
+                // 데스크톱
+                if (hasMetaMask) {
+                    metamaskGuide.style.display = 'none';
+                    storeButtons.style.display = 'none';
+                    connectWalletBtn.style.display = 'block';
+                } else {
                     connectWalletBtn.style.display = 'none';
                     metamaskGuide.style.display = 'block';
                     storeButtons.style.display = 'flex';
-                } else {
-                    metamaskGuide.style.display = 'none';
-                    storeButtons.style.display = 'none';
-                    connectWalletBtn.style.display = 'block';
                 }
                 mobileMetamaskGuide.style.display = 'none';
                 openMetaMaskBtn.style.display = 'none';
             }
         }
 
-        function openMetaMaskApp() {
-            const deepLink = getMetaMaskDeepLink();
-            window.location.href = deepLink;
-}
+        function showNotification(message, type) {
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 5000);
+        }
 
-        async function checkIfWalletIsConnected() {
-            if (typeof window.ethereum !== 'undefined') {
-                try {
-                    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-                    if (accounts.length > 0) {
-                        userWalletAddress = accounts[0];
-                        updateWalletStatus();
-                        showNotification('지갑이 자동으로 연결되었습니다.', 'success');
-                    }
-                } catch (error) {
-                    console.error('자동 연결 중 오류 발생:', error);
-                }
+        function updateWalletStatus() {
+            if (userWalletAddress) {
+                const shortAddress = `${userWalletAddress.substring(0, 6)}...${userWalletAddress.substring(38)}`;
+                walletStatus.textContent = `연결된 지갑: ${shortAddress}`;
+                walletStatus.style.display = 'block';
+                connectWalletBtn.style.display = 'none';
+                openMetaMaskBtn.style.display = 'none';
+                mobileMetamaskGuide.style.display = 'none';
+                manualConnect.style.display = 'none';
+            } else {
+                walletStatus.style.display = 'none';
+                updateInterface();
+            }
+        }
+
+        function handleConnectionFailure() {
+            showNotification('자동 연결에 실패했습니다. 지갑 주소를 직접 입력해주세요.', 'error');
+            manualConnect.style.display = 'block';
+        }
+
+        function isValidEthereumAddress(address) {
+            return /^0x[a-fA-F0-9]{40}$/.test(address);
+        }
+
+        async function handleManualWalletConnection() {
+            const address = walletAddressInput.value.trim();
+            
+            if (!address) {
+                walletAddressError.textContent = '지갑 주소를 입력해주세요.';
+                return;
+            }
+
+            if (!isValidEthereumAddress(address)) {
+                walletAddressError.textContent = '올바른 이더리움 지갑 주소를 입력해주세요.';
+                return;
+            }
+
+            walletAddressError.textContent = '';
+            submitWalletAddress.disabled = true;
+            submitWalletAddress.innerHTML = '<span class="loader"></span>';
+
+            try {
+                userWalletAddress = address;
+                updateWalletStatus();
+                showNotification('지갑이 연결되었습니다.', 'success');
+                walletInputGroup.style.display = 'none';
+            } catch (error) {
+                walletAddressError.textContent = '지갑 연결에 실패했습니다.';
+            } finally {
+                submitWalletAddress.disabled = false;
+                submitWalletAddress.textContent = '지갑 주소 등록';
             }
         }
 
@@ -462,41 +624,46 @@
                     updateWalletStatus();
                     showNotification('지갑이 연결되었습니다.', 'success');
                 } catch (error) {
-                    showNotification('지갑 연결에 실패했습니다.', 'error');
-                    console.error(error);
+                    handleConnectionFailure();
                 } finally {
                     connectWalletBtn.disabled = false;
                     connectWalletBtn.textContent = 'MetaMask 연결하기';
                 }
-            }
-        }
-
-        function updateWalletStatus() {
-            if (userWalletAddress) {
-                const shortAddress = `${userWalletAddress.substring(0, 6)}...${userWalletAddress.substring(38)}`;
-                walletStatus.textContent = `연결된 지갑: ${shortAddress}`;
-                walletStatus.style.display = 'block';
-                connectWalletBtn.style.display = 'none';
-                openMetaMaskBtn.style.display = 'none';
-                mobileMetamaskGuide.style.display = 'none';
             } else {
-                walletStatus.style.display = 'none';
-                updateInterface();
+                handleConnectionFailure();
             }
         }
 
-        function showNotification(message, type) {
-            notification.textContent = message;
-            notification.className = `notification ${type}`;
-            notification.style.display = 'block';
-            
-            setTimeout(() => {
-                notification.style.display = 'none';
-            }, 5000);
+        async function openMetaMaskApp() {
+            const deepLink = getMetaMaskDeepLink();
+            window.location.href = deepLink;
         }
 
+        async function checkIfWalletIsConnected() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                    if (accounts.length > 0) {
+                        userWalletAddress = accounts[0];
+                        updateWalletStatus();
+                        showNotification('지갑이 자동으로 연결되었습니다.', 'success');
+                    }
+                } catch (error) {
+                    console.error('자동 연결 중 오류 발생:', error);
+                }
+            }
+        }
+
+        // 이벤트 리스너
         connectWalletBtn.addEventListener('click', connectWallet);
         openMetaMaskBtn.addEventListener('click', openMetaMaskApp);
+        showManualInput.addEventListener('click', () => {
+            walletInputGroup.style.display = walletInputGroup.style.display === 'none' ? 'block' : 'none';
+        });
+        submitWalletAddress.addEventListener('click', handleManualWalletConnection);
+        walletAddressInput.addEventListener('input', () => {
+            walletAddressError.textContent = '';
+        });
 
         if (window.ethereum) {
             window.ethereum.on('accountsChanged', function (accounts) {
@@ -509,33 +676,6 @@
             });
         }
 
-        // 페이지 로드 시 자동 연결 시도
-        document.addEventListener('DOMContentLoaded', async () => {
-            updateInterface();
-            
-            // MetaMask 브라우저에서만 자동 연결 시도
-            if (isMetaMaskBrowser()) {
-                await checkIfWalletIsConnected();
-                
-                if (typeof window.ethereum !== 'undefined' && !userWalletAddress) {
-                    try {
-                        const accounts = await window.ethereum.request({
-                            method: 'eth_requestAccounts'
-                        });
-                        
-                        if (accounts.length > 0) {
-                            userWalletAddress = accounts[0];
-                            updateWalletStatus();
-                            showNotification('MetaMask가 자동으로 연결되었습니다.', 'success');
-                        }
-                    } catch (error) {
-                        console.log('자동 연결이 거부되었습니다.');
-                    }
-                }
-            }
-        });
-
-        // 폼 제출 이벤트 처리
         form.addEventListener('submit', async function(event) {
             event.preventDefault();
             
@@ -564,6 +704,33 @@
             } finally {
                 submitButton.disabled = false;
                 submitButton.textContent = '등록하기';
+            }
+        });
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', async () => {
+            updateInterface();
+            
+            if (isMetaMaskBrowser()) {
+                await checkIfWalletIsConnected();
+                
+                if (!userWalletAddress) {
+                    try {
+                        const accounts = await window.ethereum.request({
+                            method: 'eth_requestAccounts'
+                        });
+                        
+                        if (accounts.length > 0) {
+                            userWalletAddress = accounts[0];
+                            updateWalletStatus();
+                            showNotification('MetaMask가 자동으로 연결되었습니다.', 'success');
+                        } else {
+                            handleConnectionFailure();
+                        }
+                    } catch (error) {
+                        handleConnectionFailure();
+                    }
+                }
             }
         });
     </script>
