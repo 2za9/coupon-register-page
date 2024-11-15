@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>토큰 수령</title>
     <style>
+        /* 기존 스타일 유지 */
         * {
             margin: 0;
             padding: 0;
@@ -349,6 +350,21 @@
             }
         }
 
+        async function checkIfWalletIsConnected() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                    if (accounts.length > 0) {
+                        userWalletAddress = accounts[0];
+                        updateWalletStatus();
+                        showNotification('지갑이 자동으로 연결되었습니다.', 'success');
+                    }
+                } catch (error) {
+                    console.error('자동 연결 중 오류 발생:', error);
+                }
+            }
+        }
+
         async function connectWallet() {
             if (typeof window.ethereum !== 'undefined') {
                 try {
@@ -438,8 +454,31 @@
             });
         }
 
-        // 초기화
-        updateInterface();
+        // 페이지 로드 시 자동 연결 시도
+        document.
+// 페이지 로드 시 자동 연결 시도
+        document.addEventListener('DOMContentLoaded', async () => {
+            updateInterface();
+            await checkIfWalletIsConnected();
+            
+            // MetaMask가 설치되어 있지만 연결되어 있지 않은 경우 자동 연결 시도
+            if (typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask && !userWalletAddress) {
+                try {
+                    const accounts = await window.ethereum.request({
+                        method: 'eth_requestAccounts'
+                    });
+                    
+                    if (accounts.length > 0) {
+                        userWalletAddress = accounts[0];
+                        updateWalletStatus();
+                        showNotification('MetaMask가 자동으로 연결되었습니다.', 'success');
+                    }
+                } catch (error) {
+                    // 사용자가 자동 연결을 거부한 경우 조용히 처리
+                    console.log('자동 연결이 거부되었습니다.');
+                }
+            }
+        });
     </script>
 </body>
 </html>
