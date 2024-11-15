@@ -36,6 +36,7 @@
             color: #333;
             margin-bottom: 1.5rem;
             font-size: 1.75rem;
+            text-align: center;
         }
 
         .input-group {
@@ -84,6 +85,7 @@
             font-weight: 600;
             cursor: pointer;
             transition: background-color 0.2s ease;
+            margin-bottom: 1rem;
         }
 
         button:hover {
@@ -128,11 +130,28 @@
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
+
+        .wallet-info {
+            padding: 0.75rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #666;
+            word-break: break-all;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>쿠폰 등록</h1>
+        
+        <!-- 지갑 연결 섹션 -->
+        <button id="connectWallet" type="button">MetaMask 연결하기</button>
+        <div id="walletInfo" class="wallet-info" style="display: none;"></div>
+
+        <!-- 쿠폰 입력 폼 -->
         <form id="couponForm">
             <div class="input-group">
                 <label for="couponCode">쿠폰 코드</label>
@@ -146,108 +165,164 @@
                 <div class="error-text" id="couponError"></div>
             </div>
 
-            <div class="input-group">
-                <label for="walletAddress">지갑 주소</label>
-                <input 
-                    type="text" 
-                    id="walletAddress" 
-                    placeholder="지갑 주소를 입력해주세요"
-                    autocomplete="off"
-                    required
-                >
-                <div class="error-text" id="walletError"></div>
-            </div>
-
             <button type="submit" id="submitButton">등록하기</button>
         </form>
+        
         <div id="responseMessage"></div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.8.0/web3.min.js"></script>
     <script>
-        const form = document.getElementById("couponForm");
-        const submitButton = document.getElementById("submitButton");
-        const couponInput = document.getElementById("couponCode");
-        const walletInput = document.getElementById("walletAddress");
-        const couponError = document.getElementById("couponError");
-        const walletError = document.getElementById("walletError");
-        const responseMessage = document.getElementById("responseMessage");
+        const connectWalletBtn = document.getElementById('connectWallet');
+        const walletInfoDiv = document.getElementById('walletInfo');
+        const form = document.getElementById('couponForm');
+        const submitButton = document.getElementById('submitButton');
+        const couponInput = document.getElementById('couponCode');
+        const couponError = document.getElementById('couponError');
+        const responseMessage = document.getElementById('responseMessage');
 
-        function validateInputs() {
-            let isValid = true;
-            
-            // 쿠폰 코드 검증
-            if (!couponInput.value.trim()) {
-                couponError.textContent = "쿠폰 코드를 입력해주세요";
-                isValid = false;
-            } else if (couponInput.value.length < 8) {
-                couponError.textContent = "올바른 쿠폰 코드를 입력해주세요";
-                isValid = false;
+        let userWalletAddress = null;
+
+        // MetaMask 연결 상태 확인
+        async function checkMetaMaskConnection() {
+            if (typeof window.ethereum !== 'undefined') {
+                const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                if (accounts.length > 0) {
+                    userWalletAddress = accounts[0];
+                    updateWalletInfo();
+                }
             } else {
-                couponError.textContent = "";
+                connectWalletBtn.textContent = 'MetaMask를 설치해주세요';
+                connectWalletBtn.disabled = true;
             }
-
-            // 지갑 주소 검증
-            if (!walletInput.value.trim()) {
-                walletError.textContent = "지갑 주소를 입력해주세요";
-                isValid = false;
-            } else if (!/^0x[a-fA-F0-9]{40}$/.test(walletInput.value)) {
-                walletError.textContent = "올바른 이더리움 지갑 주소를 입력해주세요";
-                isValid = false;
-            } else {
-                walletError.textContent = "";
-            }
-
-            return isValid;
         }
 
-        // 입력 필드 변경 시 실시간 검증
-        [couponInput, walletInput].forEach(input => {
-            input.addEventListener('input', () => {
-                validateInputs();
-            });
-        });
+        // 지갑 연결
+        async function connectWallet() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    connectWalletBtn.disabled = true;
+                    connectWalletBtn.innerHTML = '<span class="loading"></span>';
+                    
+                    const accounts = await window.ethereum.request({ 
+                        method: 'eth_requestAccounts' 
+                    });
+                    
+                    userWalletAddress = accounts[0];
+                    updateWalletInfo();
+                } catch (error) {
+                    showMessage('지갑 연결에 실패했습니다.', 'error');
+                    console.error(error);
+                } finally {
+                    connectWalletBtn.disabled = false;
+                    connectWalletBtn.textContent = 'MetaMask 연결하기';
+                }
+            } else {
+                window.open('https://metamask.io', '_blank');
+            }
+        }
 
-        form.addEventListener("submit", async function(event) {
+        // 지갑 정보 업데이트
+        function updateWalletInfo() {
+            if (userWalletAddress) {
+                const shortAddress = `${userWalletAddress.substring(0, 6)}...${userWalletAddress.substring(38)}`;
+                walletInfoDiv.textContent = `연결된 지갑: ${shortAddress}`;
+                walletInfoDiv.style.display = 'block';
+                connectWalletBtn.style.display = 'none';
+            } else {
+                walletInfoDiv.style.display = 'none';
+                connectWalletBtn.style.display = 'block';
+            }
+        }
+
+        // 쿠폰 코드 검증
+        function validateCouponCode(code) {
+            if (!code) {
+                couponError.textContent = "쿠폰 코드를 입력해주세요";
+                return false;
+            }
+            if (code.length < 8) {
+                couponError.textContent = "올바른 쿠폰 코드를 입력해주세요";
+                return false;
+            }
+            couponError.textContent = "";
+            return true;
+        }
+
+        // 메시지 표시
+        function showMessage(text, type) {
+            responseMessage.textContent = text;
+            responseMessage.className = `response-message ${type}`;
+            setTimeout(() => {
+                responseMessage.textContent = '';
+                responseMessage.className = 'response-message';
+            }, 5000);
+        }
+
+        // 폼 제출 처리
+        form.addEventListener('submit', async function(event) {
             event.preventDefault();
             
-            if (!validateInputs()) {
+            if (!userWalletAddress) {
+                showMessage('먼저 지갑을 연결해주세요.', 'error');
+                return;
+            }
+
+            const couponCode = couponInput.value.trim();
+            
+            if (!validateCouponCode(couponCode)) {
                 return;
             }
 
             submitButton.disabled = true;
             submitButton.innerHTML = '<span class="loading"></span>';
-            responseMessage.className = '';
-            responseMessage.textContent = '';
 
             try {
-                const response = await fetch("http://your-server-address/register-coupon", {
-                    method: "POST",
+                const response = await fetch('https://your-api-endpoint.com/register-coupon', {
+                    method: 'POST',
                     headers: {
-                        "Content-Type": "application/json"
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        coupon: couponInput.value.trim(),
-                        wallet: walletInput.value.trim()
+                        coupon: couponCode,
+                        wallet: userWalletAddress
                     })
                 });
 
                 const result = await response.json();
                 
                 if (response.ok) {
-                    responseMessage.className = 'response-message success';
-                    responseMessage.textContent = "쿠폰이 성공적으로 등록되었습니다!";
+                    showMessage('쿠폰이 성공적으로 등록되었습니다!', 'success');
                     form.reset();
                 } else {
-                    throw new Error(result.message || "서버 오류가 발생했습니다.");
+                    throw new Error(result.message || '쿠폰 등록에 실패했습니다.');
                 }
             } catch (error) {
-                responseMessage.className = 'response-message error';
-                responseMessage.textContent = error.message || "등록 실패. 잠시 후 다시 시도해주세요.";
+                showMessage(error.message || '서버 오류가 발생했습니다.', 'error');
             } finally {
                 submitButton.disabled = false;
-                submitButton.textContent = "등록하기";
+                submitButton.textContent = '등록하기';
             }
         });
+
+        // 이벤트 리스너
+        connectWalletBtn.addEventListener('click', connectWallet);
+        couponInput.addEventListener('input', () => validateCouponCode(couponInput.value));
+
+        // MetaMask 계정 변경 감지
+        if (window.ethereum) {
+            window.ethereum.on('accountsChanged', function (accounts) {
+                if (accounts.length === 0) {
+                    userWalletAddress = null;
+                } else {
+                    userWalletAddress = accounts[0];
+                }
+                updateWalletInfo();
+            });
+        }
+
+        // 초기화
+        checkMetaMaskConnection();
     </script>
 </body>
 </html>
