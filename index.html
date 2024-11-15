@@ -1,6 +1,284 @@
 <!DOCTYPE html>
 <html lang="ko">
-<!-- ... (head 부분과 style은 동일) ... -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>토큰 수령</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard Variable", Pretendard, Roboto, "Noto Sans KR", "Segoe UI", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+        }
+
+        body {
+            background: #f5f7f9;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            line-height: 1.5;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 24px;
+            padding: 32px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            color: #111827;
+            margin-bottom: 32px;
+        }
+
+        .wallet-status {
+            background: #f3f4f6;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            margin-bottom: 24px;
+            font-size: 14px;
+            color: #4b5563;
+            word-break: break-all;
+            display: none;
+        }
+
+        .store-buttons {
+            display: none;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .store-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            color: white;
+            text-decoration: none;
+            transition: transform 0.2s ease;
+        }
+
+        .store-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .google-play {
+            background: #34a853;
+        }
+
+        .app-store {
+            background: #0066cc;
+        }
+
+        .connect-wallet {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            background: #3b82f6;
+            color: white;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            margin-bottom: 24px;
+        }
+
+        .connect-wallet:hover {
+            background: #2563eb;
+        }
+
+        .connect-wallet:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .form-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .input-wrapper {
+            flex: 1;
+        }
+
+        .input-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #374151;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 15px;
+            transition: all 0.2s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .submit-button {
+            padding: 12px 24px;
+            margin-top: 24px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .submit-button:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+        }
+
+        .submit-button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-text {
+            color: #ef4444;
+            font-size: 13px;
+            margin-top: 6px;
+            min-height: 18px;
+        }
+
+        .notification {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            text-align: center;
+            animation: slideIn 0.3s ease;
+        }
+
+        .notification.success {
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .notification.error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-10px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 24px;
+                border-radius: 20px;
+            }
+
+            .form-group {
+                flex-direction: column;
+            }
+
+            .submit-button {
+                width: 100%;
+                margin-top: 12px;
+            }
+
+            .store-buttons {
+                flex-direction: column;
+            }
+        }
+
+        .metamask-guide {
+            text-align: center;
+            margin-bottom: 16px;
+            color: #4b5563;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* 새로 추가된 모바일 관련 스타일 */
+        .mobile-metamask-guide {
+            text-align: center;
+            margin-bottom: 16px;
+            color: #4b5563;
+            font-size: 14px;
+            line-height: 1.6;
+            display: none;
+        }
+
+        .open-metamask-button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            background: #3b82f6;
+            color: white;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            margin-bottom: 24px;
+            display: none;
+        }
+
+        .open-metamask-button:hover {
+            background: #2563eb;
+        }
+    </style>
+</head>
 <body>
     <div class="container">
         <h1 class="title">토큰 수령</h1>
@@ -10,7 +288,7 @@
             아래 버튼을 눌러 설치해주세요.
         </div>
 
-        <div id="mobileMetamaskGuide" class="metamask-guide" style="display: none;">
+        <div id="mobileMetamaskGuide" class="mobile-metamask-guide">
             MetaMask 앱에서 브라우저를 통해 접속하거나<br>
             아래 버튼을 눌러 MetaMask 앱으로 이동해주세요.
         </div>
@@ -30,11 +308,29 @@
             </a>
         </div>
 
-        <button id="openMetaMask" class="connect-wallet" style="display: none;">MetaMask 앱으로 이동</button>
+        <button id="openMetaMask" class="open-metamask-button">MetaMask 앱으로 이동</button>
         <button id="connectWallet" class="connect-wallet">MetaMask 연결하기</button>
         <div id="walletStatus" class="wallet-status"></div>
 
-        <!-- ... (나머지 HTML은 동일) ... -->
+        <form id="couponForm">
+            <div class="form-group">
+                <div class="input-wrapper">
+                    <label for="couponCode" class="input-label">쿠폰 코드</label>
+                    <input 
+                        type="text" 
+                        id="couponCode" 
+                        class="input-field"
+                        placeholder="쿠폰 코드를 입력해주세요"
+                        autocomplete="off"
+                        required
+                    >
+                    <div class="error-text" id="couponError"></div>
+                </div>
+                <button type="submit" id="submitButton" class="submit-button">등록하기</button>
+            </div>
+        </form>
+
+        <div id="notification" class="notification" style="display: none;"></div>
     </div>
 
     <script>
@@ -72,7 +368,6 @@
             return window.ethereum?.isMetaMask && isMobileDevice();
         }
 
-        // MetaMask 딥링크 생성
         function getMetaMaskDeepLink() {
             const currentUrl = encodeURIComponent(window.location.href);
             if (getMobileOperatingSystem() === 'iOS') {
@@ -133,11 +428,10 @@
             }
         }
 
-        // MetaMask 앱으로 이동
         function openMetaMaskApp() {
             const deepLink = getMetaMaskDeepLink();
             window.location.href = deepLink;
-        }
+}
 
         async function checkIfWalletIsConnected() {
             if (typeof window.ethereum !== 'undefined') {
@@ -184,6 +478,7 @@
                 walletStatus.style.display = 'block';
                 connectWalletBtn.style.display = 'none';
                 openMetaMaskBtn.style.display = 'none';
+                mobileMetamaskGuide.style.display = 'none';
             } else {
                 walletStatus.style.display = 'none';
                 updateInterface();
@@ -200,7 +495,6 @@
             }, 5000);
         }
 
-        // 이벤트 리스너 설정
         connectWalletBtn.addEventListener('click', connectWallet);
         openMetaMaskBtn.addEventListener('click', openMetaMaskApp);
 
